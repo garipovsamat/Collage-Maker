@@ -38,7 +38,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           className={styles.btn}
           onClick={() => fileInputRef.current?.click()}
         >
-          🖼️ Загрузить
+          Загрузить
         </button>
         <input
           ref={fileInputRef}
@@ -48,7 +48,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onChange={handleFileChange}
         />
         <button className={styles.btn} onClick={onAddText}>
-          ✏️ Текст
+          Добавить текст
         </button>
       </div>
 
@@ -58,14 +58,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onClick={onExport}
           disabled={!hasElements}
         >
-          💾 Сохранить PNG
+          Сохранить PNG
         </button>
         <button
           className={`${styles.btn} ${styles.danger}`}
           onClick={onClear}
           disabled={!hasElements}
         >
-          🗑️ Очистить
+          Очистить всё
         </button>
       </div>
 

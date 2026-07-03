@@ -64,13 +64,13 @@ export const Controls: React.FC<ControlsProps> = ({
 
       <div className={styles.controlsGroup}>
         <button className={styles.btn} onClick={handleRotate}>
-          ↻ Повернуть
+          Повернуть
         </button>
         <button className={styles.btn} onClick={handleBringForward}>
-          ⬆ Вперёд
+          На передний план
         </button>
         <button className={styles.btn} onClick={handleSendBackward}>
-          ⬇ Назад
+          На задний план
         </button>
       </div>
 
@@ -79,7 +79,7 @@ export const Controls: React.FC<ControlsProps> = ({
           className={`${styles.btn} ${styles.danger}`}
           onClick={() => onDelete(selectedElement.id)}
         >
-          🗑️ Удалить
+          Удалить
         </button>
       </div>
     </div>

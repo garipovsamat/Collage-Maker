@@ -85,9 +85,9 @@ function App() {
     <div className={styles.app}>
       <header className={styles.header}>
         <h1 className={styles.title}>
-          🎨 Collage <span>Maker</span>
+          Collage Maker
         </h1>
-        <span className={styles.subtitle}>Перетаскивай • Масштабируй • Сохраняй</span>
+        <span className={styles.subtitle}>Загружай · Перемещай · Сохраняй</span>
       </header>
 
       <main className={styles.main}>
@@ -120,7 +120,7 @@ function App() {
 
       <footer className={styles.footer}>
         <span>Элементов: {elements.length}</span>
-        <span>Клик по элементу — выделение • Двойной клик по тексту — редактирование</span>
+        <span>Клик для выделения · Двойной клик по тексту для редактирования</span>
       </footer>
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />

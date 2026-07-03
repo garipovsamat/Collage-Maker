@@ -1,5 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { Position } from '../types';
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 export const useDrag = (initialPosition: Position, onDrag?: (pos: Position) => void) => {
   const [position, setPosition] = useState(initialPosition);

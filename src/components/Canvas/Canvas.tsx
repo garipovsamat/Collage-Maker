@@ -71,7 +71,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
         {elements.length === 0 && (
           <div className={`${styles.dropZone} ${isDragOver ? styles.dragOver : ''}`}>
-            <div className={styles.dropZoneIcon}>🖼️</div>
+            <div className={styles.dropZoneIcon}>📷</div>
             <div className={styles.dropZoneText}>Перетащите картинку сюда</div>
             <div className={styles.dropZoneSub}>или используйте кнопку «Загрузить»</div>
           </div>

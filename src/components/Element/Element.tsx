@@ -108,14 +108,21 @@ export const Element: React.FC<ElementProps> = ({
               background: 'white',
               border: '2px solid #007bff',
               padding: '4px 8px',
-              fontSize: '24px',
+              fontSize: Math.max(14, element.width / 8) + 'px',
               fontFamily: 'Arial, sans-serif',
               resize: 'both',
             }}
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <div className={styles.text} style={{ fontSize: '24px' }}>
+          <div 
+            className={styles.text} 
+            style={{ 
+              fontSize: Math.max(14, element.width / 8) + 'px',
+              width: element.width,
+              minHeight: element.height,
+            }}
+          >
             {element.content}
           </div>
         )
