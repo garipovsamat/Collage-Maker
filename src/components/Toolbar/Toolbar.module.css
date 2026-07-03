@@ -1,0 +1,98 @@
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.toolbarGroup {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0 8px;
+  border-right: 1px solid #eee;
+}
+
+.toolbarGroup:last-child {
+  border-right: none;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #333;
+}
+
+.btn:hover {
+  background: #e9ecef;
+  border-color: #ccc;
+}
+
+.btn.primary {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.btn.primary:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+.btn.success {
+  background: #28a745;
+  border-color: #28a745;
+  color: white;
+}
+
+.btn.success:hover {
+  background: #1e7e34;
+  border-color: #1e7e34;
+}
+
+.btn.danger {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+.btn.danger:hover {
+  background: #bd2130;
+  border-color: #bd2130;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fileInput {
+  display: none;
+}
+
+.label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.badge {
+  background: #e9ecef;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #666;
+}
