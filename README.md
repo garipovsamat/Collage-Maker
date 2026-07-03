@@ -1,32 +1,77 @@
-# React + TypeScript + Vite
+# Collage Maker
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Веб-приложение для создания коллажей с поддержкой мультивыделения, редактирования текста и экспорта в PNG.
 
-Currently, two official plugins are available:
+## Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Загрузка изображений (drag-and-drop или через кнопку)
+- Добавление текста с редактированием стилей (жирный, курсив, цвет)
+- Свободное перемещение элементов
+- Изменение размера элементов через ползунок или ресайз-ручку
+- Поворот элементов через вращающуюся ручку
+- Мультивыделение (Ctrl+клик, Shift+клик)
+- Изменение размера, слоя и текстовых стилей для нескольких элементов одновременно
+- Переключение между тёмной и светлой темой
+- Экспорт коллажа в PNG с выбором фона (белый или прозрачный)
+- Сохранение состояния в localStorage
 
-## React Compiler
+## Технологии
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 18
+- TypeScript
+- Vite
+- CSS Modules
+- Canvas API (экспорт)
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Архитектура проекта
+```text
+src/
+├── components/
+│ ├── Canvas/
+│ │ ├── Canvas.tsx          # Холст, отрисовка элементов, обработка drag-and-drop
+│ │ └── Canvas.module.css
+│ ├── Controls/
+│ │ ├── Controls.tsx        # Панель управления (размер, слои, редактор текста)
+│ │ └── Controls.module.css
+│ ├── Element/
+│ │ ├── Element.tsx         # Отдельный элемент (изображение/текст)
+│ │ └── Element.module.css
+│ └── Toolbar/
+│ ├── Toolbar.tsx           # Панель инструментов (загрузка, экспорт, очистка)
+│ └── Toolbar.module.css
+├── context/
+│ └── ThemeContext.tsx      # Контекст для переключения темы
+├── hooks/
+│ ├── useDrag.ts            # Хук для перетаскивания
+│ └── useLocalStorage.ts    # Хук для сохранения в localStorage
+├── types/
+│ └── index.ts              # Типы TypeScript
+├── utils/
+│ └── exportCanvas.ts       # Экспорт в PNG через Canvas API
+├── App.tsx                 # Корневой компонент
+├── App.module.css
+├── main.tsx
+├── vite-env.d.ts
+└── styles/
+└── global.css
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Установка и запуск
+
+```bash
+npm install
+npm run dev
+```
+## Сборка
+```bash
+npm run build
+```
+
+## Экспорт
+При нажатии кнопки "Сохранить PNG" открывается диалог выбора фона:
+
+- Белый фон — сохраняет с белым фоном
+
+- Прозрачный фон — сохраняет без фона (только элементы)
+
+Размер экспортируемого изображения соответствует размеру видимой области холста.

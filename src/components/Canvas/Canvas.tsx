@@ -5,17 +5,19 @@ import styles from './Canvas.module.css';
 
 interface CanvasProps {
   elements: CollageElement[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
+  selectedIds: string[];
+  onSelect: (id: string, e?: React.MouseEvent) => void;
+  onCanvasClick: () => void;
   onUpdate: (id: string, updates: Partial<CollageElement>) => void;
-  onDelete: (id: string) => void;
+  onDelete: () => void;
   onAddImage: (src: string) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
   elements,
-  selectedId,
+  selectedIds,
   onSelect,
+  onCanvasClick,
   onUpdate,
   onDelete,
   onAddImage,
@@ -49,6 +51,12 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
   }, [onAddImage]);
 
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onCanvasClick();
+    }
+  }, [onCanvasClick]);
+
   return (
     <div className={styles.canvasWrapper}>
       <div
@@ -57,13 +65,14 @@ export const Canvas: React.FC<CanvasProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onMouseDown={handleCanvasMouseDown}
       >
         {elements.map((el) => (
           <Element
             key={el.id}
             element={el}
-            isActive={selectedId === el.id}
-            onSelect={() => onSelect(el.id)}
+            isActive={selectedIds.includes(el.id)}
+            onSelect={(e) => onSelect(el.id, e)}
             onUpdate={onUpdate}
             onDelete={onDelete}
           />

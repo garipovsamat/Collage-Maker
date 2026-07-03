@@ -5,9 +5,9 @@ import styles from './Element.module.css';
 interface ElementProps {
   element: CollageElement;
   isActive: boolean;
-  onSelect: () => void;
+  onSelect: (e?: React.MouseEvent) => void;
   onUpdate: (id: string, updates: Partial<CollageElement>) => void;
-  onDelete: (id: string) => void;
+  onDelete: () => void;
 }
 
 export const Element: React.FC<ElementProps> = ({
@@ -18,11 +18,14 @@ export const Element: React.FC<ElementProps> = ({
   onDelete,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [textValue, setTextValue] = useState(element.content);
+  const [textValue, setTextValue] = useState(() => {
+    const match = element.content.match(/<style>.*?<\/style>(.*)/);
+    return match ? match[1] : element.content;
+  });
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const elementRef = useRef<HTMLDivElement>(null);
 
-  // === DRAG (перетаскивание) ===
+  // === DRAG ===
   const [isDragging, setIsDragging] = useState(false);
   const [dragPos, setDragPos] = useState({ x: element.x, y: element.y });
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -33,7 +36,7 @@ export const Element: React.FC<ElementProps> = ({
     if (e.target instanceof HTMLElement && e.target.closest(`.${styles.deleteBtn}`)) return;
 
     e.stopPropagation();
-    onSelect();
+    onSelect(e);
     setIsDragging(true);
     const rect = elementRef.current?.getBoundingClientRect();
     if (rect) {
@@ -72,7 +75,7 @@ export const Element: React.FC<ElementProps> = ({
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  // === RESIZE (правый нижний угол) ===
+  // === RESIZE ===
   const [isResizing, setIsResizing] = useState(false);
   const resizeStart = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
@@ -118,7 +121,7 @@ export const Element: React.FC<ElementProps> = ({
     };
   }, [isResizing, handleResizeMove, handleResizeUp]);
 
-  // === ROTATE (левый нижний угол) ===
+  // === ROTATE ===
   const [isRotating, setIsRotating] = useState(false);
   const rotateStart = useRef({ x: 0, y: 0, rotation: 0 });
 
@@ -181,7 +184,7 @@ export const Element: React.FC<ElementProps> = ({
     if (textValue.trim()) {
       onUpdate(element.id, { content: textValue.trim() });
     } else {
-      onDelete(element.id);
+      onDelete();
     }
   };
 
@@ -192,13 +195,14 @@ export const Element: React.FC<ElementProps> = ({
     }
     if (e.key === 'Escape') {
       setIsEditing(false);
-      setTextValue(element.content);
+      const match = element.content.match(/<style>.*?<\/style>(.*)/);
+      setTextValue(match ? match[1] : element.content);
     }
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDelete(element.id);
+    onDelete();
   };
 
   // === RENDER ===
@@ -211,7 +215,34 @@ export const Element: React.FC<ElementProps> = ({
     zIndex: element.zIndex,
   };
 
-  const fontSize = Math.max(14, element.width / 8);
+  // Парсим стили текста
+  const parseTextStyles = () => {
+    const match = element.content.match(/<style>(.*?)<\/style>(.*)/);
+    if (match) {
+      const styleStr = match[1];
+      const textContent = match[2];
+      const styles: React.CSSProperties = {
+        fontSize: Math.max(14, element.width / 8) + 'px',
+        width: element.width,
+        minHeight: element.height,
+      };
+      if (styleStr.includes('bold')) styles.fontWeight = 'bold';
+      if (styleStr.includes('italic')) styles.fontStyle = 'italic';
+      const colorMatch = styleStr.match(/color:([^;]+)/);
+      if (colorMatch) styles.color = colorMatch[1];
+      return { styles, text: textContent };
+    }
+    return {
+      styles: {
+        fontSize: Math.max(14, element.width / 8) + 'px',
+        width: element.width,
+        minHeight: element.height,
+      },
+      text: element.content,
+    };
+  };
+
+  const { styles: textStyles, text: displayText } = parseTextStyles();
 
   return (
     <div
@@ -246,41 +277,34 @@ export const Element: React.FC<ElementProps> = ({
               background: 'white',
               border: '2px solid #007bff',
               padding: '4px 8px',
-              fontSize: fontSize + 'px',
+              fontSize: Math.max(14, element.width / 8) + 'px',
               fontFamily: 'Arial, sans-serif',
               resize: 'both',
             }}
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <div
-            className={styles.text}
-            style={{
-              fontSize: fontSize + 'px',
-              width: element.width,
-              minHeight: element.height,
-            }}
-          >
-            {element.content}
+          <div className={styles.text} style={textStyles}>
+            {displayText}
           </div>
         )
       )}
 
-      {/* === RESIZE HANDLE (правый нижний угол) === */}
+      {/* === RESIZE === */}
       <div
         className={styles.resizeHandle}
         onMouseDown={handleResizeStart}
         title="Изменить размер"
       />
 
-      {/* === ROTATE HANDLE (левый нижний угол) === */}
+      {/* === ROTATE === */}
       <div
         className={styles.rotateHandle}
         onMouseDown={handleRotateStart}
         title="Повернуть"
       />
 
-      {/* === DELETE BUTTON === */}
+      {/* === DELETE === */}
       <div className={styles.deleteBtn} onClick={handleDeleteClick}>
         ×
       </div>

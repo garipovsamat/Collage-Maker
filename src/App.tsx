@@ -1,27 +1,52 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { CollageElement } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { exportToPNG } from './utils/exportCanvas';
 import { Canvas } from './components/Canvas/Canvas';
 import { Toolbar } from './components/Toolbar/Toolbar';
 import { Controls } from './components/Controls/Controls';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import styles from './App.module.css';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
-
 const DEFAULT_SIZE = 180;
 
-function App() {
+function AppContent() {
+  const { theme } = useTheme();
   const [elements, setElements] = useLocalStorage<CollageElement[]>('collage-elements', []);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [modal, setModal] = useState<{ isOpen: boolean; message: string; onConfirm: () => void }>({
+  const canvasAreaRef = useRef<HTMLDivElement | null>(null);
+  const [viewportSize, setViewportSize] = useState({ width: 1200, height: 800 });
+
+  const [modal, setModal] = useState<{ 
+    isOpen: boolean; 
+    message: string; 
+    onConfirm?: () => void;
+    onCancel?: () => void;
+    type?: 'confirm' | 'export';
+  }>({
     isOpen: false,
     message: '',
-    onConfirm: () => {},
   });
 
-  const selectedElement = elements.find((el: CollageElement) => el.id === selectedId) || null;
+  // Определяем размер окна редактирования
+  useEffect(() => {
+    const updateSize = () => {
+      if (canvasAreaRef.current) {
+        const rect = canvasAreaRef.current.getBoundingClientRect();
+        setViewportSize({
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  const selectedElements = elements.filter((el) => selectedIds.includes(el.id));
 
   const handleAddImage = useCallback((src: string) => {
     const newElement: CollageElement = {
@@ -37,7 +62,7 @@ function App() {
       src,
     };
     setElements((prev: CollageElement[]) => [...prev, newElement]);
-    setSelectedId(newElement.id);
+    setSelectedIds([newElement.id]);
   }, [elements.length, setElements]);
 
   const handleAddText = useCallback(() => {
@@ -53,7 +78,7 @@ function App() {
       content: 'Двойной клик для редактирования',
     };
     setElements((prev: CollageElement[]) => [...prev, newElement]);
-    setSelectedId(newElement.id);
+    setSelectedIds([newElement.id]);
   }, [elements.length, setElements]);
 
   const handleUpdateElement = useCallback((id: string, updates: Partial<CollageElement>) => {
@@ -62,49 +87,99 @@ function App() {
     );
   }, [setElements]);
 
-  const handleDeleteElement = useCallback((id: string) => {
-    setElements((prev: CollageElement[]) => prev.filter((el: CollageElement) => el.id !== id));
-    if (selectedId === id) {
-      setSelectedId(null);
-    }
-  }, [selectedId, setElements]);
+  // === МУЛЬТИ-АПДЕЙТ ===
+  const handleUpdateSelected = useCallback((updates: Partial<CollageElement>) => {
+    setElements((prev: CollageElement[]) =>
+      prev.map((el: CollageElement) => 
+        selectedIds.includes(el.id) ? { ...el, ...updates } : el
+      )
+    );
+  }, [selectedIds, setElements]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.length === 0) return;
+    setModal({
+      isOpen: true,
+      type: 'confirm',
+      message: `Вы уверены, что хотите удалить ${selectedIds.length} элемент(ов)?`,
+      onConfirm: () => {
+        setElements((prev: CollageElement[]) => 
+          prev.filter((el: CollageElement) => !selectedIds.includes(el.id))
+        );
+        setSelectedIds([]);
+        setModal({ isOpen: false, message: '' });
+      },
+      onCancel: () => setModal({ isOpen: false, message: '' }),
+    });
+  }, [selectedIds, setElements]);
 
   const handleClearAll = useCallback(() => {
     if (elements.length === 0) return;
     setModal({
       isOpen: true,
+      type: 'confirm',
       message: 'Вы уверены, что хотите удалить все элементы?',
       onConfirm: () => {
         setElements([]);
-        setSelectedId(null);
-        setModal({ isOpen: false, message: '', onConfirm: () => {} });
+        setSelectedIds([]);
+        setModal({ isOpen: false, message: '' });
       },
+      onCancel: () => setModal({ isOpen: false, message: '' }),
     });
   }, [elements.length, setElements]);
 
-  const handleExport = useCallback(() => {
+  const handleExportRequest = useCallback(() => {
     if (elements.length === 0) return;
-    exportToPNG(elements, canvasRef);
-  }, [elements]);
-
-  const handleSelect = useCallback((id: string) => {
-    setSelectedId(id);
-  }, []);
-
-  const handleDeleteSelected = useCallback(() => {
-    if (!selectedId) return;
     setModal({
       isOpen: true,
-      message: 'Вы уверены, что хотите удалить выбранный элемент?',
+      type: 'export',
+      message: 'Сохранить с белым фоном или прозрачным?',
       onConfirm: () => {
-        handleDeleteElement(selectedId);
-        setModal({ isOpen: false, message: '', onConfirm: () => {} });
+        exportToPNG(elements, canvasRef, false, viewportSize.width, viewportSize.height);
+        setModal({ isOpen: false, message: '' });
+      },
+      onCancel: () => {
+        exportToPNG(elements, canvasRef, true, viewportSize.width, viewportSize.height);
+        setModal({ isOpen: false, message: '' });
       },
     });
-  }, [selectedId, handleDeleteElement]);
+  }, [elements, viewportSize]);
+
+  // === ВЫДЕЛЕНИЕ С CTRL ===
+  const handleSelect = useCallback((id: string, e?: React.MouseEvent) => {
+    const isCtrl = e?.ctrlKey || e?.metaKey;
+    const isShift = e?.shiftKey;
+    
+    if (isCtrl) {
+      // Ctrl + клик — добавляем/убираем из выделения
+      setSelectedIds((prev) => 
+        prev.includes(id) 
+          ? prev.filter((i) => i !== id) 
+          : [...prev, id]
+      );
+    } else if (isShift && selectedIds.length > 0) {
+      // Shift + клик — выделяем все между последним и текущим
+      const allIds = elements.map((el) => el.id);
+      const lastSelected = selectedIds[selectedIds.length - 1];
+      const lastIdx = allIds.indexOf(lastSelected);
+      const currentIdx = allIds.indexOf(id);
+      const start = Math.min(lastIdx, currentIdx);
+      const end = Math.max(lastIdx, currentIdx);
+      const newSelected = allIds.slice(start, end + 1);
+      setSelectedIds(newSelected);
+    } else {
+      // Обычный клик — выделяем только один
+      setSelectedIds([id]);
+    }
+  }, [selectedIds, elements]);
+
+  // Клик по пустому месту — снимаем выделение
+  const handleCanvasClick = useCallback(() => {
+    setSelectedIds([]);
+  }, []);
 
   return (
-    <div className={styles.app}>
+    <div className={`${styles.app} ${styles[theme]}`}>
       <header className={styles.header}>
         <h1 className={styles.title}>Collage Maker</h1>
       </header>
@@ -114,59 +189,87 @@ function App() {
           elementCount={elements.length}
           onAddImage={handleAddImage}
           onAddText={handleAddText}
-          onExport={handleExport}
+          onExport={handleExportRequest}
           onClear={handleClearAll}
           hasElements={elements.length > 0}
         />
 
         <Controls
-          selectedElement={selectedElement}
-          onUpdate={handleUpdateElement}
-          onDelete={handleDeleteSelected}
+          selectedElements={selectedElements}
+          onUpdateSelected={handleUpdateSelected}
+          onDeleteSelected={handleDeleteSelected}
+          onUpdateElement={handleUpdateElement}
         />
 
-        <div className={styles.canvasArea}>
+        <div className={styles.canvasArea} ref={canvasAreaRef}>
           <Canvas
             elements={elements}
-            selectedId={selectedId}
+            selectedIds={selectedIds}
             onSelect={handleSelect}
+            onCanvasClick={handleCanvasClick}
             onUpdate={handleUpdateElement}
-            onDelete={handleDeleteElement}
+            onDelete={handleDeleteSelected}
             onAddImage={handleAddImage}
           />
         </div>
       </main>
 
       <footer className={styles.footer}>
-        <span>Элементов: {elements.length}</span>
-        <span>Клик для выделения · Двойной клик по тексту для редактирования</span>
+        <span>Элементов: {elements.length} | Выделено: {selectedIds.length}</span>
+        <span>Ctrl+клик — мультивыделение · Клик на пустое место — снять выделение</span>
       </footer>
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      {/* МОДАЛЬНОЕ ОКНО */}
       {modal.isOpen && (
-        <div className={styles.modalOverlay} onClick={() => setModal({ isOpen: false, message: '', onConfirm: () => {} })}>
+        <div className={styles.modalOverlay} onClick={() => setModal({ isOpen: false, message: '' })}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <p className={styles.modalMessage}>{modal.message}</p>
             <div className={styles.modalActions}>
-              <button
-                className={styles.modalCancel}
-                onClick={() => setModal({ isOpen: false, message: '', onConfirm: () => {} })}
-              >
-                Отмена
-              </button>
-              <button
-                className={styles.modalConfirm}
-                onClick={modal.onConfirm}
-              >
-                Удалить
-              </button>
+              {modal.type === 'export' ? (
+                <>
+                  <button
+                    className={styles.modalCancel}
+                    onClick={modal.onCancel}
+                  >
+                    Прозрачный
+                  </button>
+                  <button
+                    className={styles.modalConfirm}
+                    onClick={modal.onConfirm}
+                  >
+                    Белый фон
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className={styles.modalCancel}
+                    onClick={modal.onCancel}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    className={styles.modalConfirm}
+                    onClick={modal.onConfirm}
+                  >
+                    Удалить
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 
