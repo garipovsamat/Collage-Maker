@@ -15,6 +15,11 @@ function App() {
   const [elements, setElements] = useLocalStorage<CollageElement[]>('collage-elements', []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [modal, setModal] = useState<{ isOpen: boolean; message: string; onConfirm: () => void }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+  });
 
   const selectedElement = elements.find((el: CollageElement) => el.id === selectedId) || null;
 
@@ -66,10 +71,15 @@ function App() {
 
   const handleClearAll = useCallback(() => {
     if (elements.length === 0) return;
-    if (window.confirm('Удалить все элементы?')) {
-      setElements([]);
-      setSelectedId(null);
-    }
+    setModal({
+      isOpen: true,
+      message: 'Вы уверены, что хотите удалить все элементы?',
+      onConfirm: () => {
+        setElements([]);
+        setSelectedId(null);
+        setModal({ isOpen: false, message: '', onConfirm: () => {} });
+      },
+    });
   }, [elements.length, setElements]);
 
   const handleExport = useCallback(() => {
@@ -81,13 +91,22 @@ function App() {
     setSelectedId(id);
   }, []);
 
+  const handleDeleteSelected = useCallback(() => {
+    if (!selectedId) return;
+    setModal({
+      isOpen: true,
+      message: 'Вы уверены, что хотите удалить выбранный элемент?',
+      onConfirm: () => {
+        handleDeleteElement(selectedId);
+        setModal({ isOpen: false, message: '', onConfirm: () => {} });
+      },
+    });
+  }, [selectedId, handleDeleteElement]);
+
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <h1 className={styles.title}>
-          Collage Maker
-        </h1>
-        <span className={styles.subtitle}>Загружай · Перемещай · Сохраняй</span>
+        <h1 className={styles.title}>Collage Maker</h1>
       </header>
 
       <main className={styles.main}>
@@ -103,7 +122,7 @@ function App() {
         <Controls
           selectedElement={selectedElement}
           onUpdate={handleUpdateElement}
-          onDelete={handleDeleteElement}
+          onDelete={handleDeleteSelected}
         />
 
         <div className={styles.canvasArea}>
@@ -124,6 +143,29 @@ function App() {
       </footer>
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+      {/* МОДАЛЬНОЕ ОКНО */}
+      {modal.isOpen && (
+        <div className={styles.modalOverlay} onClick={() => setModal({ isOpen: false, message: '', onConfirm: () => {} })}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <p className={styles.modalMessage}>{modal.message}</p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.modalCancel}
+                onClick={() => setModal({ isOpen: false, message: '', onConfirm: () => {} })}
+              >
+                Отмена
+              </button>
+              <button
+                className={styles.modalConfirm}
+                onClick={modal.onConfirm}
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

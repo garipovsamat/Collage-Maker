@@ -5,7 +5,7 @@ import styles from './Controls.module.css';
 interface ControlsProps {
   selectedElement: CollageElement | null;
   onUpdate: (id: string, updates: Partial<CollageElement>) => void;
-  onDelete: (id: string) => void;
+  onDelete: () => void;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -68,7 +68,7 @@ export const Controls: React.FC<ControlsProps> = ({
       <div className={styles.controlsGroup}>
         <button
           className={`${styles.btn} ${styles.danger}`}
-          onClick={() => onDelete(selectedElement.id)}
+          onClick={onDelete}
         >
           Удалить
         </button>
