@@ -29,12 +29,6 @@ export const Controls: React.FC<ControlsProps> = ({
     });
   };
 
-  const handleRotate = () => {
-    onUpdate(selectedElement.id, {
-      rotation: (selectedElement.rotation + 15) % 360,
-    });
-  };
-
   const handleBringForward = () => {
     onUpdate(selectedElement.id, {
       zIndex: selectedElement.zIndex + 1,
@@ -63,9 +57,6 @@ export const Controls: React.FC<ControlsProps> = ({
       </div>
 
       <div className={styles.controlsGroup}>
-        <button className={styles.btn} onClick={handleRotate}>
-          Повернуть
-        </button>
         <button className={styles.btn} onClick={handleBringForward}>
           На передний план
         </button>
